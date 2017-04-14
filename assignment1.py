@@ -230,7 +230,7 @@ class Assignment1:
         print("Number of mapped reads: {}".format(self.get_number_mapped_reads()))              # 6396581
         print("Gene Symbol: {}".format(self.get_gene_symbol()))                                 # NM_014256
         self.get_region_of_gene()                                                               # Chromosome: 11, Start: End:
-        print("Exon Count: {}".format(self.get_number_of_exons()))                              #
+        print("Exon Count: {}".format(self.get_number_of_exons()))                              # 3
 
         
 if __name__ == '__main__':

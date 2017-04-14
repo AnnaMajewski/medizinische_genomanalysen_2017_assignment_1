@@ -76,7 +76,7 @@ class Assignment1:
         print ("Done fetching data")
                 
     def get_sam_header(self):
-        # Um ein BAM file lesen zu koennen muss man ein alignmentfile object erstelleb
+        # Um ein BAM file lesen zu koennen muss man ein alignmentfile object erstellen
         path_to_file = '/home/taka/medgen/HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam'
         samfile = pysam.AlignmentFile(path_to_file, "rb")
         # laut manual enthaelt das first level "HD" oder "SQ".

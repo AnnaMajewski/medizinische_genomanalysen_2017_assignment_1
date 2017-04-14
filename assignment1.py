@@ -9,7 +9,7 @@ class Assignment1:
     
     def __init__(self):
         ## Your gene of interest
-        self.gene = "SMPD1"
+        self.gene = "B3GNT3" #B3GNT3
         ## Zuerst habe ich die Information in einer Zeile ausgelesen.
         # Da ich die Infos aber weiter verwenden will, schreibe ich sie in Variablen.
         # Die Namen der Spalten entnehme ich der SQL-query.
@@ -52,7 +52,6 @@ class Assignment1:
         ergebnis = cursor.execute(query)
         
         ## Write to file
-        ## TODO this may need some work 
         with open(file_name, "w") as fh:
             for row in cursor:
                 fh.write(str(row) + "\n")
@@ -70,16 +69,6 @@ class Assignment1:
                     self.exonStarts = info[7] # Das ist ein bytestring
                     self.exonEnds = info[8] # Das ist ein bytestring
 
-        #print("Genname:", self.gene)
-        #print("Gennname2:", self.name)
-        #print("Chromosom:", self.chrom)
-        #print("txStart:", self.txStart)
-        #print("txEnd:", self.txEnd)
-        #print("strand:", self.strand)
-        #print("Exone:", self.exonCount)
-        #print("Exons:", self.exonStarts)
-        #print("Exons:", self.exonEnds)
-
         ## Close cursor & connection
         cursor.close()
         cnx.close()
@@ -87,53 +76,166 @@ class Assignment1:
         print ("Done fetching data")
                 
     def get_sam_header(self):
-        # Um ein BAM file lesen zu koennen muss mna ein alignmentfile object erstellen
-        # zuerst gebe ich fix hier ein pathfile an, wird spaeter ersetzt
+        # Um ein BAM file lesen zu koennen muss man ein alignmentfile object erstelleb
         path_to_file = '/home/taka/medgen/HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam'
         samfile = pysam.AlignmentFile(path_to_file, "rb")
-        header=[]
         # laut manual enthaelt das first level "HD" oder "SQ".
-        for i in samfile.header['SQ']:
-            header.append(i)
-            print("Header: {}".format(i))
+        # in HD steht: VN = Format Version und SO = Sorting order of alignments
+        # zusaetzlich noch GO = grouping of alignments
+
+        # uns interessiert der header, deshalb
+        for header, item in samfile.header['HD'].items():
+            if header == 'VN':
+                print ("Version: {}".format(item))
+            if header == 'SO':
+                print("Sorting order of alignments: {}".format(item))
+            if header == 'GO':
+                print("Grouping of alignments: {}".format(item))
 
         samfile.close()
         
     def get_properly_paired_reads_of_gene(self):
-        print("todo")
+        ## diese Methode funktioniert nur mit indizierten BAM Files
+        ## deshalb wurde in der Konsole (ausserhalb dieses Programms) die Datei indiziert:
+        ## taka@Yurnero:~/medgen/assignment01$ samtools index HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
+
+        ## samfile wird wieder geoeffnet
+        path_to_file = '/home/taka/medgen/assignment01/HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam'
+        samfile = pysam.AlignmentFile(path_to_file, "rb")
+        anzahl = 0
+        ## 11 steht fuer Chromosom 11 und txStart bzw. Ende geben an, wo mein Gen sich befindet
+        for read in samfile.fetch("11", self.txStart, self.txEnd):
+            if read.is_proper_pair:
+                anzahl += 1
+        ## da sehr viele (908) Reads properly paired sind und die gesamte Zeile dafür ausgegeben wird,
+        ## habe ich mich entschieden die Anzahl der properly paired reads auszugeben.
+        ## wenn gewuenscht ist, dass die reads per se ausgegeben werden, einfach in der folgenden Zeile das # entfernen.
+
+                #print(read)
+
+        samfile.close()
+        return anzahl
         
     def get_gene_reads_with_indels(self):
-        print("todo")
+        ## Indels kann man im CIGAR String finden:
+        ##https: // samtools.github.io / hts - specs / SAMv1.pdf
+        ## wenn ein D oder ein I im CIGAR String vorhanden ist, hat man ein INDEL gefunden.
+        ## der CIGAR String befindet sich in der 6. Spalte = index 5
+
+        ## samfile wird wieder geoeffnet
+        path_to_file = '/home/taka/medgen/assignment01/HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam'
+        samfile = pysam.AlignmentFile(path_to_file, "rb")
+        anzahl = 0
+
+        ## 11 steht fuer Chromosom 11 und txStart bzw. Ende geben an, wo mein Gen sich befindet
+        for read in samfile.fetch("11", self.txStart, self.txEnd):
+            if not read.is_unmapped:
+                cigar = read.cigar
+                for typ, vorkommen in cigar:
+                    if typ == 1 or typ == 2:
+                        anzahl += 1
+
+            ## Wenn statt der Anzahl die Zeile gewuenscht ist, einfach # entfernen:
+
+                #print(read)
+
+        samfile.close()
+        return anzahl
         
     def calculate_total_average_coverage(self):
-        print("todo")
+        ## pybedtools empfiehlt die a, b Nomenklatur fuer die Berechnung
+
+        a = pybedtools.BedTool('HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam')
+        b = a.genome_coverage(bg=True)
+
+        anzahl = 0
+        coverage = 0
+
+        for line in b:
+            ## in jeder Zeile die coverage auslesen und die Anzahl um 1 erhoehen
+            ## aus dem String eine float Zahl machen
+            ind_coverage = float(line[3]) # individual coverage
+            coverage += ind_coverage
+            anzahl += 1
+
+        ## am Schluss die Coverage/Anzahl dividieren um average coverage zu erhalten
+            av_coverage = coverage/anzahl
+        return av_coverage
         
     def calculate_gene_average_coverage(self):
-        print("todo")
-        
+        ## Hier wird die Coverage fuer mein Gen berechnet
+        ## sie soll zwischen meinem Genstart und -ende liegen, diese Infos sind in self.txStart und self.txEnd
+
+        a = pybedtools.BedTool('HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam')
+        b = a.genome_coverage(bg=True)
+
+        anzahl = 0
+        coverage = 0
+        av_coverage = 0
+
+        for line in b:
+            ## in line[1] steht der Anfang des Reads, in line[2] das Ende
+            anfang = int(line[1])
+            ende = int(line[2])
+
+            ## wenn der Anfang spaeter oder gleich wie mein Anfang ist
+            ## und das Ende frueher oder gleich wie mein Ende ist
+            ## dann befinden wir uns innerhalb meines Gens
+            if self.txStart <= anfang:
+                if self.txEnd >= ende:
+                    # der Rest ist wie bei der oberen Berechnung
+                    ind_coverage = float(line[3]) # individual coverage
+                    coverage += ind_coverage
+                    anzahl +=1
+
+            if anzahl >0:
+                av_coverage = coverage/anzahl
+
+        return (av_coverage)
+
     def get_number_mapped_reads(self):
-        print("todo")
-        
+        ## samfile wird wieder geoeffnet
+        path_to_file = '/home/taka/medgen/assignment01/HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam'
+        samfile = pysam.AlignmentFile(path_to_file, "rb")
+        anzahl = 0
+
+        for read in samfile:
+            ## da es kein read.is_mapped gibt, not unmapped
+            if not read.is_unmapped:
+                anzahl += 1
+
+        return anzahl
+
     def get_gene_symbol(self):
-        print("todo")
+        return self.name
         
     def get_region_of_gene(self):
-        print("todo")
+        print("Chromosome: {}\nStart: {}\nEnd: {}".format(self.chrom, self.txStart, self.txEnd))
         
     def get_number_of_exons(self):
-        print("todo")
+        return(self.exonCount)
     
     def print_summary(self):
-        print("Print all results here")
-    
+        #damit die weiteren Methoden funktionieren, muss zuerst die fetch_gene_coordinates durchlaufen werden.
+        ## das kann etwas dauern, bitte um Geduld.
+        print("SAM Header:")
+        self.get_sam_header()
+        print("Properly paired reads: {}".format(self.get_properly_paired_reads_of_gene()))     # 908
+        print("Reads with Indels: {}".format(self.get_gene_reads_with_indels()))                # 16
+
+        ## Die Berechnung dauert leider ziemlich lange. Bitte um Geduld.
+        print("Total Average Coverage: {}".format(self.calculate_total_average_coverage()))     # 5.608294198569065
+        print("Gene Average Coverage: {}".format(self.calculate_gene_average_coverage()))       # 5.563932448733413
+
+        print("Number of mapped reads: {}".format(self.get_number_mapped_reads()))              # 6396581
+        print("Gene Symbol: {}".format(self.get_gene_symbol()))                                 # NM_014256
+        self.get_region_of_gene()                                                               # Chromosome: 11, Start: End:
+        print("Exon Count: {}".format(self.get_number_of_exons()))                              #
+
         
 if __name__ == '__main__':
     print ("Assignment 1")
+    print("Author:", __author__, "\n")
     assignment1 = Assignment1()
-    assignment1.get_sam_header()
+    assignment1.fetch_gene_coordinates("hg19", "ausgabe.txt")
     assignment1.print_summary()
-    
-    assignment1.fetch_gene_coordinates("hg19", "MYFILE.TXT") ## TODO change filename
-    
-    
-

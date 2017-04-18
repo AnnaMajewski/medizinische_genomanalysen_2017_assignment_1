@@ -25,6 +25,8 @@ class Assignment1:
         self.exonEnds = ""
 
     def fetch_gene_coordinates(self, genome_reference, file_name):
+        '''Diese Methode verbindet sich zu UCSC und holt dort Daten
+        :return nothing'''
         
         print ("Connecting to UCSC to fetch data")
         
@@ -76,6 +78,8 @@ class Assignment1:
         print ("Done fetching data")
                 
     def get_sam_header(self):
+        '''Diese Methode holt den SAM Header aus dem BAM File
+        :return Version, Sorting order of alignments, grouping of alignments'''
         # Um ein BAM file lesen zu koennen muss man ein alignmentfile object erstellen
         path_to_file = '/home/taka/medgen/HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam'
         samfile = pysam.AlignmentFile(path_to_file, "rb")
@@ -95,6 +99,9 @@ class Assignment1:
         samfile.close()
         
     def get_properly_paired_reads_of_gene(self):
+        '''Diese Methode zaehlt die proper reads oder gibt sie aus.
+        :return anzahl der properly paired reads'''
+
         ## diese Methode funktioniert nur mit indizierten BAM Files
         ## deshalb wurde in der Konsole (ausserhalb dieses Programms) die Datei indiziert:
         ## taka@Yurnero:~/medgen/assignment01$ samtools index HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
@@ -117,6 +124,9 @@ class Assignment1:
         return anzahl
         
     def get_gene_reads_with_indels(self):
+        '''Diese Methode zaehlt wieviele der Reads in meinem Gen Indels haben.
+        :return anzahl der reads mit indels'''
+
         ## Indels kann man im CIGAR String finden:
         ##https: // samtools.github.io / hts - specs / SAMv1.pdf
         ## wenn ein D oder ein I im CIGAR String vorhanden ist, hat man ein INDEL gefunden.
@@ -143,6 +153,9 @@ class Assignment1:
         return anzahl
         
     def calculate_total_average_coverage(self):
+        '''Diese Methode berechnet die Coverage des bam-files.
+        :return average coverage des files.'''
+
         ## pybedtools empfiehlt die a, b Nomenklatur fuer die Berechnung
 
         a = pybedtools.BedTool('HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam')
@@ -163,8 +176,10 @@ class Assignment1:
         return av_coverage
         
     def calculate_gene_average_coverage(self):
-        ## Hier wird die Coverage fuer mein Gen berechnet
-        ## sie soll zwischen meinem Genstart und -ende liegen, diese Infos sind in self.txStart und self.txEnd
+        '''Diese Methode berechnet die Coverage fuer mein Gen
+        :return average coverage fuer meinen Genbereich'''
+
+        ## Sie soll zwischen meinem Genstart und -ende liegen, diese Infos sind in self.txStart und self.txEnd
 
         a = pybedtools.BedTool('HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam')
         b = a.genome_coverage(bg=True)
@@ -186,14 +201,17 @@ class Assignment1:
                     # der Rest ist wie bei der oberen Berechnung
                     ind_coverage = float(line[3]) # individual coverage
                     coverage += ind_coverage
-                    anzahl +=1
+                    anzahl += 1
 
-            if anzahl >0:
+            if anzahl > 0:
                 av_coverage = coverage/anzahl
 
         return (av_coverage)
 
     def get_number_mapped_reads(self):
+        ''' Diese Methode zaehlt die mapped reads.
+        :return anzahl der mapped reads'''
+
         ## samfile wird wieder geoeffnet
         path_to_file = '/home/taka/medgen/assignment01/HG00096.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam'
         samfile = pysam.AlignmentFile(path_to_file, "rb")
@@ -207,15 +225,24 @@ class Assignment1:
         return anzahl
 
     def get_gene_symbol(self):
-        return self.name
+        ''' Diese Methode holt nur das Gensymbol.
+        :return Gensymbol'''
+        return self.gene
         
     def get_region_of_gene(self):
+        ''' Diese Methode holt das Chromosom, den Start und das Ende meines Gens.
+        :return Chromosom, Start und End'''
+
         print("Chromosome: {}\nStart: {}\nEnd: {}".format(self.chrom, self.txStart, self.txEnd))
         
     def get_number_of_exons(self):
+        '''Diese Methode gibt aus wieviele Exone in meinem Gen sind.
+        :return anzahl der Exone'''
+
         return(self.exonCount)
     
     def print_summary(self):
+        '''Diese Methode enthaelt die Formatierungen fuer alle Ergebnisse'''
         #damit die weiteren Methoden funktionieren, muss zuerst die fetch_gene_coordinates durchlaufen werden.
         ## das kann etwas dauern, bitte um Geduld.
         print("SAM Header:")
@@ -228,7 +255,7 @@ class Assignment1:
         print("Gene Average Coverage: {}".format(self.calculate_gene_average_coverage()))       # 5.563932448733413
 
         print("Number of mapped reads: {}".format(self.get_number_mapped_reads()))              # 6396581
-        print("Gene Symbol: {}".format(self.get_gene_symbol()))                                 # NM_014256
+        print("Gene Symbol: {}".format(self.get_gene_symbol()))                                 # B3GNT3
         self.get_region_of_gene()                                                               # Chromosome: 11, Start: 17905918 End: 17924385
         print("Exon Count: {}".format(self.get_number_of_exons()))                              # 3
 

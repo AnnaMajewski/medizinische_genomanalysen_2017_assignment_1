@@ -4,6 +4,13 @@ import pybedtools
 
 __author__ = 'Anna Majewski'
 
+## Allgemeine Information:
+## Da mein Gen nicht auf Chromosom 11 liegt, aber wir mit dem BAM-File von Chromosom 11 arbeiten,
+# habe ich mich entschieden den 11er bei den Funktionen hard zu coden:
+# self.get_gene_reads_with_indels self.get_properly_paire d_reads_of_gene self.get_number_mapped_reads
+# um zu testen ob das Programm "sinnvolle" Ergebnisse liefert.
+# Mir ist bewusst, dass bei Eingabe meines Chromosoms (19) keine Ergebnisse erzielt werden koennen.
+
 
 class Assignment1:
     
@@ -114,7 +121,7 @@ class Assignment1:
         for read in samfile.fetch("11", self.txStart, self.txEnd):
             if read.is_proper_pair:
                 anzahl += 1
-        ## da sehr viele (908) Reads properly paired sind und die gesamte Zeile dafür ausgegeben wird,
+        ## da sehr viele (908) Reads properly paired sind und die gesamte Zeile dafuer ausgegeben wird,
         ## habe ich mich entschieden die Anzahl der properly paired reads auszugeben.
         ## wenn gewuenscht ist, dass die reads per se ausgegeben werden, einfach in der folgenden Zeile das # entfernen.
 
@@ -246,7 +253,7 @@ class Assignment1:
         #damit die weiteren Methoden funktionieren, muss zuerst die fetch_gene_coordinates durchlaufen werden.
         ## das kann etwas dauern, bitte um Geduld.
         print("SAM Header:")
-        self.get_sam_header()
+        self.get_sam_header()                                                                   # Version: 1.0, Sorting order of alignments: coordinate
         print("Properly paired reads: {}".format(self.get_properly_paired_reads_of_gene()))     # 908
         print("Reads with Indels: {}".format(self.get_gene_reads_with_indels()))                # 16
 
@@ -256,7 +263,7 @@ class Assignment1:
 
         print("Number of mapped reads: {}".format(self.get_number_mapped_reads()))              # 6396581
         print("Gene Symbol: {}".format(self.get_gene_symbol()))                                 # B3GNT3
-        self.get_region_of_gene()                                                               # Chromosome: 11, Start: 17905918 End: 17924385
+        self.get_region_of_gene()                                                               # Chromosome: 19, Start: 17905918 End: 17924385
         print("Exon Count: {}".format(self.get_number_of_exons()))                              # 3
 
         
